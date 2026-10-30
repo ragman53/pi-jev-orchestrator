@@ -1,0 +1,58 @@
+{
+	"version": 1,
+	"enabled": true,
+	"allowProjectOverrides": false,
+	"models": {
+		"terra": {
+			"preferred": "openai-codex/gpt-6.1-terra",
+			"compatible": ["openai/gpt-6.1-terra", "openai-codex/gpt-5.6-terra", "openai/gpt-5.6-terra"]
+		},
+		"sol": {
+			"preferred": "openai-codex/gpt-6.1-sol",
+			"compatible": ["openai/gpt-6.1-sol", "openai-codex/gpt-5.6-sol", "openai/gpt-5.6-sol"]
+		},
+		"astra": null,
+		"fallback": { "preferred": "deepseek/deepseek-flash", "compatible": [] }
+	},
+	"classifier": {
+		"model": "typesafe/jev-latest",
+		"minConfidence": 0.75,
+		"timeoutMs": 10000,
+		"maxRequestChars": 8000,
+		"failureCooldownMs": 300000
+	},
+	"policy": [
+		{ "complexity": ["exceptional"], "role": "astra", "thinking": "max" },
+		{ "category": ["architecture"], "role": "sol", "thinking": "xhigh" },
+		{ "category": ["code review"], "risk": ["high"], "role": "sol", "thinking": "xhigh" },
+		{ "complexity": ["high"], "role": "sol", "thinking": "xhigh" },
+		{ "complexity": ["trivial"], "role": "terra", "thinking": "medium" },
+		{ "category": ["small code modification", "documentation"], "role": "terra", "thinking": "medium" },
+		{ "category": ["debugging"], "complexity": ["low"], "role": "terra", "thinking": "medium" },
+		{ "complexity": ["low"], "role": "terra", "thinking": "medium" },
+		{ "role": "terra", "thinking": "high" }
+	],
+	"sticky": { "minWorkUnitsBetweenSwitches": 2 },
+	"thinking": {
+		"preferCurrentModel": true,
+		"minCompletedWorkUnits": 3,
+		"minSuccessRate": 0.8,
+		"maxLatencyRatio": 1.25
+	},
+	"cache": {
+		"minSavingsRatio": 0.2,
+		"minSavingsUsd": 0.05,
+		"minSamples": 3,
+		"expectedRemainingRequests": null,
+		"maxRetryRiskIncrease": 0.1
+	},
+	"fallback": {
+		"enabled": true,
+		"cooldownMs": 900000,
+		"maxCooldownMs": 86400000,
+		"maxRetries": 2,
+		"maxTokens": null,
+		"sharedCooldownFile": "jev-orchestrator-cooldown.json"
+	},
+	"diagnostics": "normal"
+}

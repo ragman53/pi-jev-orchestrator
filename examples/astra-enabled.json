@@ -1,0 +1,6 @@
+{
+	"version": 1,
+	"models": {
+		"astra": { "preferred": "openai/gpt-6-astra", "compatible": ["openai-codex/gpt-6-astra"] }
+	}
+}

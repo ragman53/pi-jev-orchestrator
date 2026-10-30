@@ -1,0 +1,9 @@
+{
+	"version": 1,
+	"models": {
+		"terra": { "preferred": "openai/gpt-6.1-terra", "compatible": ["openai/gpt-5.6-terra"] },
+		"sol": { "preferred": "openai/gpt-6.1-sol", "compatible": [] },
+		"astra": null,
+		"fallback": { "preferred": "deepseek/deepseek-flash", "compatible": [] }
+	}
+}
