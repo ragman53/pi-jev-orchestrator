@@ -58,6 +58,85 @@ describe("policy and classifier", () => {
 			expect((await f.run()).model.id).toBe(terra.id);
 		}
 	});
+	test.each([
+		["history", 0.53, "high"],
+		["previous", 0.53, "high"],
+		["history", 0.95, "medium"],
+		["previous", 0.95, "medium"],
+	] as const)(
+		"initial auto selection ignores unmanaged Sol Max from %s at confidence %s",
+		async (source, confidence, level) => {
+			const f = fixture({
+				category: "exploration",
+				complexity: "trivial",
+				confidence,
+				multiFile: false,
+				verification: false,
+			});
+			if (source === "history") f.manager.appendMessage(assistant(sol, "max"));
+			const result = await f.run(
+				source === "previous" ? { previous: { model: sol, thinkingLevel: "max" } } : {},
+			);
+			expect(result.model.id).toBe(terra.id);
+			expect(result.thinkingLevel).toBe(level);
+			expect(f.state().why).toContain("fresh policy pair");
+			expect(f.classify).toHaveBeenCalledTimes(1);
+			expect((await f.run({ messages: [{ role: "user", content: "Continue.", timestamp: 2 }] })).state).toBe(
+				result.state,
+			);
+			expect(f.classify).toHaveBeenCalledTimes(1);
+		},
+	);
+	test("initial selection also releases an authenticated OpenAI-compatible Sol Max history", async () => {
+		const actualTerra = model("openai", terra.id);
+		const actualSol = model("openai", sol.id);
+		const f = fixture({ category: "exploration", complexity: "trivial", confidence: 0.53 }, [
+			actualTerra,
+			actualSol,
+			deepseek,
+		]);
+		f.manager.appendMessage(assistant(actualSol, "max"));
+		const result = await f.run();
+		expect(result.model).toBe(actualTerra);
+		expect(result.thinkingLevel).toBe("high");
+		expect(f.state().classification.source).toBe("jev");
+	});
+	test.each([0.53, 0.95])(
+		"reset releases managed Sol Max at confidence %s without deleting history or cooldowns",
+		async (confidence) => {
+			const f = fixture({ complexity: "exceptional", reasoning: "deep" });
+			await f.run();
+			expect(f.state().selected).toEqual(pair(sol, "max"));
+			f.manager.appendMessage(assistant(sol, "max"));
+			const old = f.state();
+			old.cooldowns = { unrelated: { until: 2000000, notBefore: 0, failures: 1 } };
+			f.setAnswer({
+				category: "exploration",
+				complexity: "trivial",
+				confidence,
+				multiFile: false,
+				verification: false,
+			});
+			f.manager.appendCustomEntry(CONTROL_ENTRY, {
+				mode: "auto",
+				boundaryToken: "fresh",
+				resetToken: "fresh",
+			} satisfies Control);
+			const result = await f.run({ previous: { model: sol, thinkingLevel: "max" } });
+			expect(result.model.id).toBe(terra.id);
+			expect(result.thinkingLevel).toBe(
+				confidence < DEFAULT_CONFIG.classifier.minConfidence ? "high" : "medium",
+			);
+			expect(f.state().workUnitId).not.toBe(old.workUnitId);
+			expect(f.state().cooldowns).toEqual(old.cooldowns);
+			expect(
+				f.manager
+					.getBranch()
+					.some((e) => e.type === "message" && e.message.role === "assistant" && e.message.model === sol.id),
+			).toBe(true);
+			expect(f.classify).toHaveBeenCalledTimes(2);
+		},
+	);
 	test("a new boundary can leave an unavailable prior target for an explicit compatible target", async () => {
 		const f = fixture({}, [sol, deepseek]);
 		f.manager.appendMessage(assistant(terra));

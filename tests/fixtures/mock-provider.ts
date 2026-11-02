@@ -56,12 +56,14 @@ function classification(context: ClassifierContext): ClassifierResult {
 		if (question.type === "choice") {
 			const options = Object.keys(question.criteria);
 			const selected = String(values[key]);
+			const p =
+				key === "category" && process.env.JEV_TEST_SCENARIO === "uncertain-classification" ? 0.53 : 0.95;
 			answers[key] = {
 				type: "choice",
 				choice: selected,
-				confidence: 0.95,
+				confidence: p,
 				probabilities: Object.fromEntries(
-					options.map((x) => [x, x === selected ? 0.95 : 0.05 / (options.length - 1)]),
+					options.map((x) => [x, x === selected ? p : (1 - p) / (options.length - 1)]),
 				),
 			};
 		} else if (question.type === "bool")

@@ -74,11 +74,23 @@ export function registerCommands(pi: ExtensionAPI): void {
 									physical: actual ? `${modelKey(actual)} / ${actual.thinkingLevel}` : null,
 									routedPair: state?.selected ?? null,
 									workUnit: state?.workUnitId ?? null,
+									why: state?.why ?? "No work unit was routed yet.",
+									classification: state
+										? {
+												source: state.classification.source,
+												category: state.classification.category,
+												complexity: state.classification.complexity,
+												confidence: state.classification.confidence,
+											}
+										: null,
 									mode: control.mode,
 									sticky: state?.sticky ?? true,
 									fallback: state?.fallback ?? false,
 									thinkingCache: physicalModel
-										? await thinkingCacheAssessment(physicalModel, ctx.modelRegistry)
+										? {
+												scope: "same-model thinking-level changes",
+												...(await thinkingCacheAssessment(physicalModel, ctx.modelRegistry)),
+											}
 										: null,
 									pendingNewWorkUnit: control.boundaryToken !== (state?.boundaryToken ?? ""),
 									cooldowns: state?.cooldowns ?? {},

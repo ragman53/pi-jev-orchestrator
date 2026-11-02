@@ -6,6 +6,7 @@ import type { AssistantMessage } from "@earendil-works/pi-ai";
 import { SessionManager } from "@earendil-works/pi-coding-agent";
 import { MODEL_ID, PROVIDER, readState } from "../src/state.ts";
 import { COMPARISON_LEVELS, pairMetrics } from "../src/stats.ts";
+import { assistant, sol } from "./helpers.ts";
 
 interface MockRequest {
 	provider: string;
@@ -269,6 +270,37 @@ describe("installed Pi CLI with -e (no network or real quotas)", () => {
 		expect(fork.classifications).toBe(0);
 		expect(fork.requests[0]?.model).toBe("gpt-6.1-sol");
 	});
+	test.each([
+		["success", "medium"],
+		["uncertain-classification", "high"],
+	] as const)(
+		"first activation over a physical Sol Max session follows policy with %s",
+		(scenario, level) => {
+			const dir = environment();
+			const manager = SessionManager.create(process.cwd(), join(dir, "sessions"));
+			manager.appendModelChange(sol.provider, sol.id);
+			manager.appendThinkingLevelChange("max");
+			manager.appendMessage({ role: "user", content: "Earlier independent work.", timestamp: 1 });
+			manager.appendMessage(assistant(sol, "max"));
+			const session = manager.getSessionFile();
+			if (!session) throw new Error("Expected a persisted test session.");
+			const run = invoke(dir, scenario, ["Make a trivial spelling fix.", "/route status"], { session });
+			expect(run.code).toBe(0);
+			expect(run.requests[0]?.model).toBe("gpt-6.1-terra");
+			expect(run.requests[0]?.level).toBe(level);
+			expect(run.classifications).toBe(1);
+			expect(run.stderr).toContain("fresh policy pair");
+			expect(run.stderr).toContain('"scope": "same-model thinking-level changes"');
+			expect(run.stderr).toContain('"why":');
+			expect(run.stderr).toContain('"classification":');
+			if (scenario === "uncertain-classification") expect(run.stderr).toContain('"confidence": 0.53');
+			const resumed = invoke(dir, "success", ["Continue."], { session });
+			expect(resumed.code).toBe(0);
+			expect(resumed.requests[0]?.model).toBe("gpt-6.1-terra");
+			expect(resumed.requests[0]?.level).toBe(level);
+			expect(resumed.classifications).toBe(0);
+		},
+	);
 	test("fallback remains selected after restart even with a functioning GPT mock", () => {
 		const dir = environment();
 		const session = sessionPath(dir, "fallback");
@@ -299,6 +331,8 @@ describe("installed Pi CLI with -e (no network or real quotas)", () => {
 		expect(run.requests[1]?.level).toBe("high");
 		expect(run.requests[2]?.model).toBe("gpt-6.1-sol");
 		expect(run.requests[2]?.level).toBe("xhigh");
+		expect(run.requests[4]?.model).toBe("gpt-6.1-terra");
+		expect(run.requests[4]?.level).toBe("medium");
 		expect(run.classifications).toBe(3);
 		expect(run.stderr).toContain("subscription");
 		expect(run.stderr).toContain("workUnit");

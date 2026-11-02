@@ -349,9 +349,15 @@ export async function route(
 			why = "Provider cooldown is active; keep the fallback at this safe boundary.";
 			fallback = true;
 		}
+		// Only an active routed unit owns sticky cache protection. Physical history alone
+		// must not pin first activation or an explicit reset to a previously selected model.
+		if (!state && prior && !fallback)
+			why +=
+				" No active routed work unit; select a fresh policy pair instead of inheriting physical history.";
 		const priorRole = prior ? roleOf(prior, config) : undefined;
 		const currentModel = prior ? availableModel(ctx.modelRegistry, modelKey(prior)) : undefined;
 		if (
+			state &&
 			prior &&
 			currentModel &&
 			priorRole &&

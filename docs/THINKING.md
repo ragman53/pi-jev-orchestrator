@@ -1,5 +1,13 @@
 # Thinking levels and cache verification
 
+`/route status` scopes `thinkingCache` to same-model thinking-level changes.
+`verified: false` does not report a provider failure or disable ordinary prompt-cache reads.
+The status also shows the last routing reason and classification confidence.
+
+The first automatic work unit uses policy instead of inheriting an unmanaged physical pair.
+An explicit `/route reset` also permits a fresh selection without claiming that the previous cache survives.
+Existing routed units still enforce sticky routing, confidence checks, and verified thinking changes.
+
 The thinking amendment extends the existing router.
 It does not replace its continuation, retry, or fallback paths.
 `max` is a supported candidate above `xhigh`, not an alias for it.

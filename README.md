@@ -133,7 +133,12 @@ The router never scans for an unrelated cheap model.
 The first request starts a work unit and normally calls Jev once.
 Jev receives only the bounded current request and compact task facts.
 It does not receive the transcript or system prompt.
-A failed or uncertain classification uses a conservative policy or keeps the prior pair.
+On first activation, a failed or uncertain classification selects the conservative policy.
+Physical messages from before activation do not pin the initial model or level.
+An explicit `/route reset` also makes a fresh policy selection on the next request.
+These fresh selections can lose the previous prompt cache.
+They do not claim cache-preserving thinking escalation.
+Once a routed work unit exists, uncertain boundaries retain its active pair.
 
 Use `/route new` for an independent task.
 Prefixes such as `New task:` and `Independent task:` also mark clear boundaries.
@@ -156,6 +161,11 @@ An uncertain boundary continues the current work.
 | `/route reset`         | Clear routing controls and start fresh, but retain usage and provider cooldowns   |
 
 Changing controls requires an idle agent.
+The status includes the last decision reason and classification confidence.
+`thinkingCache.verified` checks same-model thinking-level changes, not ordinary prompt-cache availability.
+A false value does not mean that Jev failed or that native prompt caching is disabled.
+`/route new` retains cache and switch checks. It does not force a cheaper model.
+After a reset, the displayed physical model remains the last response until the next request runs.
 A manual thinking change inside an active work unit requires verified cache behavior.
 With the current subscription sign-in, start fresh before selecting a different level:
 

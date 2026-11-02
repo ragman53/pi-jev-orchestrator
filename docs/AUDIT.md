@@ -102,8 +102,8 @@ See [THINKING.md](THINKING.md) for verification scope and comparison limitations
 
 ## Validation and local activation
 
-`bun run check` passed type checking, Biome, and 134 tests.
-The suite includes 26 native CLI integration cases and native-adapter wire tests.
+The initial `bun run check` passed type checking, Biome, and 134 tests.
+The initial suite included 26 native CLI integration cases and native-adapter wire tests.
 All nine requested model/thinking variants dispatch correctly with mock providers.
 Max quota failover preserves completed tools and stays on DeepSeek.
 The synthetic benchmark also exercises a case where static Terra High costs less than sticky routing.
@@ -115,6 +115,24 @@ The original packages, default model, authentication file, and warming configura
 A private pre-install configuration backup is in `.test-artifacts/activation-20261030T172607/settings.before.json`.
 An isolated package-autoload smoke test listed `orchestrator/auto` without `-e` or a model request.
 The user's default model remains unchanged. Selecting the orchestrator is explicit.
+
+## First-activation routing fix (2026-11-02)
+
+A real session exposed a first-activation defect.
+Jev returned a valid low-confidence classification for trivial work.
+The conservative policy selected Terra High, but switch protection kept a pre-existing physical Sol Max pair.
+The same code also prevented `/route reset` from releasing that pair.
+The previous physical message was incorrectly treated as an active routed work unit.
+
+Switch protection now requires an active routed state.
+Initial selection and explicit reset use policy without inheriting unmanaged history.
+Normal continuations, routed work boundaries, verified thinking changes, and quota fallback retain their protections.
+The status now includes the decision reason, classification confidence, and the scope of its cache assessment.
+The assessment concerns thinking-level changes. It does not disable ordinary cache reads.
+Regression tests cover low and high confidence, physical history, native previous-model metadata, reset, OpenAI aliases, and CLI resume.
+After the fix, `bun run check` passed 143 tests, including 28 native CLI integration cases.
+Type checking, Biome, and `bun run benchmark` also passed.
+No real model requests are needed for these tests.
 
 ## References
 
